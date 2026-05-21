@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inspreek app</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-labelledby="app-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Outlook conceptmaker</p>
+            <h1 id="app-title">Inspreek app</h1>
+          </div>
+          <div class="status-pill" id="supportStatus">Controleert browser...</div>
+        </div>
+
+        <div class="recorder-panel">
+          <button class="record-button" id="recordButton" type="button" aria-pressed="false">
+            <span class="record-dot" aria-hidden="true"></span>
+            <span id="recordButtonText">Start opname</span>
+          </button>
+          <div class="meter" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p class="hint" id="statusText">Druk op de knop en spreek je tekst in.</p>
+        </div>
+
+        <label class="field-label" for="transcriptText">Tekst</label>
+        <textarea id="transcriptText" placeholder="Je transcript verschijnt hier. Pas de tekst aan voordat je hem mailt."></textarea>
+
+        <div class="actions">
+          <button class="secondary-button" id="clearButton" type="button">Wissen</button>
+          <button class="primary-button" id="emailButton" type="button" disabled>Open in Outlook</button>
+        </div>
+      </section>
+
+      <aside class="settings" aria-labelledby="settings-title">
+        <h2 id="settings-title">Instellingen</h2>
+        <label class="field-label" for="recipientEmail">Vooraf ingesteld adres</label>
+        <input id="recipientEmail" type="email" autocomplete="email" spellcheck="false">
+
+        <label class="field-label" for="emailSubject">Onderwerp</label>
+        <input id="emailSubject" type="text" spellcheck="true">
+
+        <div class="notice">
+          <strong>Verzenden</strong>
+          <p>De app maakt een Outlook-concept. Controleer het bericht en verstuur het daarna in Outlook.</p>
+        </div>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
