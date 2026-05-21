@@ -33,3 +33,7 @@ De knop **Open in Outlook** opent via `mailto:` een nieuw mailconcept met ontvan
 ## Vaktermen
 
 De app corrigeert na elke opname veelvoorkomende termen uit verhuur, industrie, kabels en las-equipment. Breid in `app.js` de lijst `DOMAIN_CORRECTIONS` uit met woorden die jullie vaak gebruiken of die de browser verkeerd verstaat.
+
+## Artikellijst importeren
+
+Je kunt in de app een artikellijst uploaden als `.xlsx`, `.xls`, `.csv` of `.tsv`. De app leest de cellen uit, maakt daar lokaal in de browser een woordenlijst van en gebruikt die bij nieuwe opnames om artikelnamen beter te corrigeren. De lijst wordt opgeslagen in `localStorage` en wordt niet naar een server gestuurd.

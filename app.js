@@ -1,5 +1,7 @@
 const DEFAULT_RECIPIENT = "ontvanger@example.com";
 const DEFAULT_SUBJECT = "Ingesproken bericht";
+const ARTICLE_VOCABULARY_KEY = "articleVocabulary";
+const MAX_ARTICLE_TERMS = 3000;
 
 const DOMAIN_CORRECTIONS = [
   ["las apparaat", "lasapparaat"],
@@ -86,10 +88,14 @@ const clearButton = document.querySelector("#clearButton");
 const emailButton = document.querySelector("#emailButton");
 const recipientEmail = document.querySelector("#recipientEmail");
 const emailSubject = document.querySelector("#emailSubject");
+const articleFile = document.querySelector("#articleFile");
+const articleVocabularyStatus = document.querySelector("#articleVocabularyStatus");
+const clearArticleListButton = document.querySelector("#clearArticleListButton");
 
 let recognition;
 let isRecording = false;
 let finalTranscript = "";
+let articleVocabulary = loadArticleVocabulary();
 
 recipientEmail.value = localStorage.getItem("recipientEmail") || DEFAULT_RECIPIENT;
 emailSubject.value = localStorage.getItem("emailSubject") || DEFAULT_SUBJECT;
@@ -127,8 +133,60 @@ function preserveCapitalization(original, replacement) {
   return replacement;
 }
 
+function normalizeTerm(text) {
+  return String(text)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function createSpokenVariants(term) {
+  const normalized = normalizeTerm(term);
+  const variants = new Set([normalized]);
+
+  variants.add(normalized.replace(/\b(\d+)\s*mm2\b/g, "$1 kwadraat"));
+  variants.add(normalized.replace(/\b(\d+)\s*mm\b/g, "$1 millimeter"));
+  variants.add(normalized.replace(/\b(\d+)\s*m\b/g, "$1 meter"));
+  variants.add(normalized.replace(/\b(\d+)\s*v\b/g, "$1 volt"));
+  variants.add(normalized.replace(/\b(\d+)\s*a\b/g, "$1 ampere"));
+  variants.add(normalized.replace(/\b(\d+)\s*kg\b/g, "$1 kilo"));
+
+  return [...variants].filter(Boolean);
+}
+
+function loadArticleVocabulary() {
+  try {
+    const savedVocabulary = JSON.parse(
+      localStorage.getItem(ARTICLE_VOCABULARY_KEY) || "[]"
+    );
+    return Array.isArray(savedVocabulary) ? savedVocabulary : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveArticleVocabulary(terms) {
+  articleVocabulary = terms.slice(0, MAX_ARTICLE_TERMS);
+  localStorage.setItem(ARTICLE_VOCABULARY_KEY, JSON.stringify(articleVocabulary));
+  updateArticleVocabularyStatus();
+}
+
+function updateArticleVocabularyStatus() {
+  const count = articleVocabulary.length;
+  articleVocabularyStatus.textContent = count
+    ? `${count} artikeltermen geladen voor herkenning.`
+    : "Geen artikellijst geladen.";
+}
+
 function applyDomainCorrections(text) {
-  return DOMAIN_CORRECTIONS.reduce((correctedText, [spoken, replacement]) => {
+  const articleCorrections = articleVocabulary.flatMap((term) =>
+    createSpokenVariants(term).map((variant) => [variant, term])
+  );
+
+  return [...DOMAIN_CORRECTIONS, ...articleCorrections].reduce((correctedText, [spoken, replacement]) => {
     const pattern = new RegExp(`\\b${escapeRegExp(spoken)}\\b`, "gi");
     return correctedText.replace(pattern, (match) =>
       preserveCapitalization(match, replacement)
@@ -138,6 +196,61 @@ function applyDomainCorrections(text) {
     .replace(/\s+([,.!?;:])/g, "$1")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
+
+function splitTabularText(text, separator) {
+  return text
+    .split(/\r?\n/)
+    .flatMap((row) => row.split(separator))
+    .map((cell) => cell.trim());
+}
+
+function extractTermsFromRows(rows) {
+  const seen = new Set();
+  const terms = [];
+
+  rows.flat().forEach((cell) => {
+    const term = String(cell || "").trim();
+    const normalized = normalizeTerm(term);
+    const looksUseful = normalized.length >= 3 && /[a-z0-9]/i.test(normalized);
+
+    if (!looksUseful || seen.has(normalized)) return;
+
+    seen.add(normalized);
+    terms.push(term);
+  });
+
+  return terms
+    .sort((a, b) => b.length - a.length)
+    .slice(0, MAX_ARTICLE_TERMS);
+}
+
+function parseTextArticleList(text, fileName) {
+  const separator = fileName.toLowerCase().endsWith(".tsv") ? "\t" : /;/.test(text) ? ";" : ",";
+  return extractTermsFromRows(splitTabularText(text, separator));
+}
+
+async function parseSpreadsheetArticleList(file) {
+  const extension = file.name.toLowerCase().split(".").pop();
+
+  if (extension === "csv" || extension === "tsv") {
+    return parseTextArticleList(await file.text(), file.name);
+  }
+
+  if (!window.XLSX) {
+    throw new Error("Excel-lezer is niet geladen. Sla de lijst eventueel op als CSV en probeer opnieuw.");
+  }
+
+  const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const rows = workbook.SheetNames.flatMap((sheetName) =>
+    window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      header: 1,
+      blankrows: false,
+      defval: "",
+    })
+  );
+
+  return extractTermsFromRows(rows);
 }
 
 function appendTranscript(text) {
@@ -259,4 +372,28 @@ emailSubject.addEventListener("input", () => {
   localStorage.setItem("emailSubject", emailSubject.value.trim());
 });
 
+articleFile.addEventListener("change", async () => {
+  const [file] = articleFile.files;
+  if (!file) return;
+
+  articleVocabularyStatus.textContent = "Artikellijst wordt gelezen...";
+
+  try {
+    const terms = await parseSpreadsheetArticleList(file);
+    saveArticleVocabulary(terms);
+    articleVocabularyStatus.textContent = `${terms.length} artikeltermen geladen uit ${file.name}.`;
+  } catch (error) {
+    articleVocabularyStatus.textContent = error.message;
+  } finally {
+    articleFile.value = "";
+  }
+});
+
+clearArticleListButton.addEventListener("click", () => {
+  localStorage.removeItem(ARTICLE_VOCABULARY_KEY);
+  articleVocabulary = [];
+  updateArticleVocabularyStatus();
+});
+
+updateArticleVocabularyStatus();
 syncEmailButton();

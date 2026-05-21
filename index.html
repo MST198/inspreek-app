@@ -49,6 +49,11 @@
         <label class="field-label" for="emailSubject">Onderwerp</label>
         <input id="emailSubject" type="text" spellcheck="true">
 
+        <label class="field-label" for="articleFile">Artikellijst</label>
+        <input id="articleFile" class="file-input" type="file" accept=".xlsx,.xls,.csv,.tsv">
+        <button class="secondary-button full-width" id="clearArticleListButton" type="button">Artikellijst wissen</button>
+        <p class="small-status" id="articleVocabularyStatus">Geen artikellijst geladen.</p>
+
         <div class="notice">
           <strong>Verzenden</strong>
           <p>De app maakt een Outlook-concept. Controleer het bericht en verstuur het daarna in Outlook.</p>
@@ -61,6 +66,7 @@
       </aside>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
