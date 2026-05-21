@@ -119,9 +119,8 @@ function stopRecording() {
 function openOutlookDraft() {
   const to = encodeURIComponent(recipientEmail.value.trim());
   const subject = encodeURIComponent(emailSubject.value.trim() || DEFAULT_SUBJECT);
-  const body = encodeURIComponent(transcriptText.value.trim());
-  const outlookUrl = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
-  window.open(outlookUrl, "_blank", "noopener,noreferrer");
+  const body = encodeURIComponent(transcriptText.value.trim()).replace(/%0A/g, "%0D%0A");
+  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
 }
 
 if (!SpeechRecognition) {

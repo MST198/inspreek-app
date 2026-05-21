@@ -28,4 +28,4 @@ Je kunt het adres ook in de app zelf wijzigen. Dat wordt lokaal in de browser on
 
 ## Outlook
 
-De knop **Open in Outlook** opent een nieuw Outlook-concept met ontvanger, onderwerp en tekst ingevuld. De browser mag zonder Microsoft Graph-koppeling niet stilletjes namens jou e-mail verzenden, dus de laatste verzendbevestiging gebeurt in Outlook.
+De knop **Open in Outlook** opent via `mailto:` een nieuw mailconcept met ontvanger, onderwerp en tekst ingevuld. Zet Outlook in Windows als standaard mail-app als je wilt dat dit direct in Outlook opent. De browser mag zonder Microsoft Graph-koppeling niet stilletjes namens jou e-mail verzenden, dus de laatste verzendbevestiging gebeurt in Outlook.
