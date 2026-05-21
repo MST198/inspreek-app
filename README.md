@@ -29,3 +29,7 @@ Je kunt het adres ook in de app zelf wijzigen. Dat wordt lokaal in de browser on
 ## Outlook
 
 De knop **Open in Outlook** opent via `mailto:` een nieuw mailconcept met ontvanger, onderwerp en tekst ingevuld. Zet Outlook in Windows als standaard mail-app als je wilt dat dit direct in Outlook opent. De browser mag zonder Microsoft Graph-koppeling niet stilletjes namens jou e-mail verzenden, dus de laatste verzendbevestiging gebeurt in Outlook.
+
+## Vaktermen
+
+De app corrigeert na elke opname veelvoorkomende termen uit verhuur, industrie, kabels en las-equipment. Breid in `app.js` de lijst `DOMAIN_CORRECTIONS` uit met woorden die jullie vaak gebruiken of die de browser verkeerd verstaat.

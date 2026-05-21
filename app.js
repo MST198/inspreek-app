@@ -1,6 +1,78 @@
 const DEFAULT_RECIPIENT = "ontvanger@example.com";
 const DEFAULT_SUBJECT = "Ingesproken bericht";
 
+const DOMAIN_CORRECTIONS = [
+  ["las apparaat", "lasapparaat"],
+  ["las aparaat", "lasapparaat"],
+  ["las aparaten", "lasapparaten"],
+  ["las apparaten", "lasapparaten"],
+  ["las equipment", "las-equipment"],
+  ["les equipment", "las-equipment"],
+  ["las equipement", "las-equipment"],
+  ["mig mag", "MIG/MAG"],
+  ["mig-mag", "MIG/MAG"],
+  ["mig", "MIG"],
+  ["mag lassen", "MAG-lassen"],
+  ["tig", "TIG"],
+  ["tig lassen", "TIG-lassen"],
+  ["electrode lassen", "elektrode lassen"],
+  ["elektroden lassen", "elektrode lassen"],
+  ["electrode apparaat", "elektrodeapparaat"],
+  ["elektrode apparaat", "elektrodeapparaat"],
+  ["plasma snijder", "plasmasnijder"],
+  ["plasma snijden", "plasmasnijden"],
+  ["snij brander", "snijbrander"],
+  ["las toorts", "lastoorts"],
+  ["las torch", "lastoorts"],
+  ["aard kabel", "aardkabel"],
+  ["massa kabel", "massakabel"],
+  ["massa klem", "massaklem"],
+  ["verleng kabel", "verlengkabel"],
+  ["kracht stroom", "krachtstroom"],
+  ["krachtstroom kabel", "krachtstroomkabel"],
+  ["ce stekker", "CEE-stekker"],
+  ["cee stekker", "CEE-stekker"],
+  ["cee form", "CEE-form"],
+  ["verdeel kast", "verdeelkast"],
+  ["stroom verdeel kast", "stroomverdeelkast"],
+  ["haspel", "kabelhaspel"],
+  ["kabel haspel", "kabelhaspel"],
+  ["slijp tol", "slijptol"],
+  ["haakse slijper", "haakse slijper"],
+  ["boor machine", "boormachine"],
+  ["accu boor", "accuboormachine"],
+  ["slag schroevendraaier", "slagschroevendraaier"],
+  ["momentsleutel", "momentsleutel"],
+  ["lucht slang", "luchtslang"],
+  ["pers lucht", "perslucht"],
+  ["compressor", "compressor"],
+  ["hydrauliek slang", "hydrauliekslang"],
+  ["hijs band", "hijsband"],
+  ["hijs banden", "hijsbanden"],
+  ["ketting takel", "kettingtakel"],
+  ["takel", "takel"],
+  ["hef truck", "heftruck"],
+  ["hoogwerker", "hoogwerker"],
+  ["steiger", "steiger"],
+  ["verhuur artikel", "verhuurartikel"],
+  ["verhuur artikelen", "verhuurartikelen"],
+  ["huur artikel", "huurartikel"],
+  ["huur artikelen", "huurartikelen"],
+  ["retour melding", "retourmelding"],
+  ["werk order", "werkorder"],
+  ["project nummer", "projectnummer"],
+  ["artikel nummer", "artikelnummer"],
+  ["serienummer", "serienummer"],
+  ["kalibratie", "kalibratie"],
+  ["keurings datum", "keuringsdatum"],
+  ["nen drie één vier nul", "NEN 3140"],
+  ["nen 3140", "NEN 3140"],
+  ["nen drie honderd veertien nul", "NEN 3140"],
+  ["atex", "ATEX"],
+  ["pbm", "PBM"],
+  ["persoonlijke beschermings middelen", "persoonlijke beschermingsmiddelen"],
+];
+
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
@@ -42,8 +114,34 @@ function setRecording(nextRecording) {
   recordButtonText.textContent = isRecording ? "Stop opname" : "Start opname";
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function preserveCapitalization(original, replacement) {
+  if (!original) return replacement;
+  if (original === original.toUpperCase()) return replacement.toUpperCase();
+  if (original[0] === original[0].toUpperCase()) {
+    return `${replacement[0].toUpperCase()}${replacement.slice(1)}`;
+  }
+  return replacement;
+}
+
+function applyDomainCorrections(text) {
+  return DOMAIN_CORRECTIONS.reduce((correctedText, [spoken, replacement]) => {
+    const pattern = new RegExp(`\\b${escapeRegExp(spoken)}\\b`, "gi");
+    return correctedText.replace(pattern, (match) =>
+      preserveCapitalization(match, replacement)
+    );
+  }, text)
+    .replace(/\b([A-Z]{2,})\s*\/\s*([A-Z]{2,})\b/g, "$1/$2")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function appendTranscript(text) {
-  const cleanText = text.trim();
+  const cleanText = applyDomainCorrections(text);
   if (!cleanText) return;
 
   const current = transcriptText.value.trim();
@@ -61,6 +159,7 @@ function createRecognition() {
   instance.lang = "nl-NL";
   instance.continuous = true;
   instance.interimResults = true;
+  instance.maxAlternatives = 3;
 
   instance.onstart = () => {
     finalTranscript = "";
@@ -99,7 +198,7 @@ function createRecognition() {
   instance.onend = () => {
     setRecording(false);
     appendTranscript(finalTranscript);
-    setStatus("Opname klaar. Je kunt de tekst aanpassen of mailen.");
+    setStatus("Opname klaar. Vaktermen zijn automatisch gecorrigeerd.");
   };
 
   return instance;
